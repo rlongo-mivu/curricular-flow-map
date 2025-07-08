@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curricular Analytics Flowmap Builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #7c3aed;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --warning-color: #f59e0b;
+            --background: #f3f4f6;
+            --surface: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--surface);
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            background-color: var(--surface);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            overflow-y: auto;
+        }
+
+        .canvas-container {
+            background-color: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #canvas.dragging {
+            cursor: grabbing;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background-color: var(--surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--background);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .project-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .project-controls input {
+            flex: 1;
+        }
+
+        .recent-projects {
+            margin-top: 10px;
+        }
+
+        .project-item {
+            padding: 8px 12px;
+            background-color: var(--background);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .project-item:hover {
+            background-color: #e5e7eb;
+        }
+
+        .course-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            background-color: var(--background);
+        }
+
+        .course-item {
+            padding: 8px;
+            margin-bottom: 8px;
+            background-color: var(--surface);
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .course-info {
+            flex: 1;
+        }
+
+        .course-code {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .course-name {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .delete-btn {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--surface);
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background-color: #fee;
+            color: var(--danger-color);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #f0fdf4;
+            color: var(--success-color);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: var(--text-primary);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+        }
+
+        .tooltip.active {
+            opacity: 1;
+        }
+
+        .prerequisite-type {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .prerequisite-type label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+
+        .controls-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: var(--surface);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .zoom-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .zoom-btn:hover {
+            background-color: var(--background);
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .sidebar {
+                order: 2;
+            }
+
+            .canvas-container {
+                height: 400px;
+                order: 1;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .project-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 
+    ===== JSONbin.io SETUP INSTRUCTIONS =====
+    
+    1. Go to https://jsonbin.io and create a free account
+    2. Once logged in, go to your dashboard
+    3. Create a new bin (you can leave it empty, just click "Create Bin")
+    4. Copy the Bin ID from the URL (it looks like: 5f2d3c4a5b6c7d8e9f0a1b2c)
+    5. Go to API Keys section and create a new API key
+    6. Replace the placeholders below with your actual values:
+    
+    const JSONBIN_API_KEY = 'YOUR_API_KEY_HERE';
+    const JSONBIN_BIN_ID = 'YOUR_BIN_ID_HERE';
+    
+    7. Save this file and host it on GitHub Pages
+    8. Share the project ID with other administrators for collaboration
+    
+    ===== END OF SETUP INSTRUCTIONS =====
+    -->
+
+    <div class="container">
+        <header>
+            <h1>Curricular Analytics Flowmap Builder</h1>
+            <p class="subtitle">Visualize graduation requirements and course dependencies</p>
+        </header>
+
+        <div class="main-grid">
+            <aside class="sidebar">
+                <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
+
+                <section class="section">
+                    <h2 class="section-title">Project Management</h2>
+                    <div class="project-controls">
+                        <input type="text" id="projectId" placeholder="Enter project ID">
+                        <button class="btn btn-primary" onclick="loadProject()">Load</button>
+                        <button class="btn btn-success" onclick="createNewProject()">New</button>
+                    </div>
+                    <div class="recent-projects" id="recentProjects"></div>
+                </section>
+
+                <section class="section">
+                    <h2 class="section-title">Add Course</h2>
+                    <form id="courseForm" onsubmit="addCourse(event)">
+                        <div class="form-group">
+                            <label for="courseCode">Course Code</label>
+                            <input type="text" id="courseCode" required placeholder="e.g., MATH 101">
+                        </div>
+                        <div class="form-group">
+                            <label for="courseName">Course Name</label>
+                            <input type="text" id="courseName" required placeholder="e.g., Calculus I">
+                        </div>
+                        <div class="form-group">
+                            <label for="courseCredits">Credits</label>
+                            <input type="number" id="courseCredits" min="0" max="10" step="0.5" required placeholder="3">
+                        </div>
+                        <div class="form-group">
+                            <label for="courseSemester">Typical Semester</label>
+                            <select id="courseSemester" required>
+                                <option value="">Select semester</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                                <option value="3">Semester 3</option>
+                                <option value="4">Semester 4</option>
+                                <option value="5">Semester 5</option>
+                                <option value="6">Semester 6</option>
+                                <option value="7">Semester 7</option>
+                                <option value="8">Semester 8</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Course</button>
+                    </form>
+                </section>
+
+                <section class="section">
+                    <h2 class="section-title">Courses</h2>
+                    <div class="course-list" id="courseList"></div>
+                </section>
+
+                <section class="section">
+                    <h2 class="section-title">Add Prerequisite</h2>
+                    <form id="prerequisiteForm" onsubmit="addPrerequisite(event)">
+                        <div class="form-group">
+                            <label for="fromCourse">From Course (Prerequisite)</label>
+                            <select id="fromCourse" required>
+                                <option value="">Select course</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="toCourse">To Course (Dependent)</label>
+                            <select id="toCourse" required>
+                                <option value="">Select course</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Prerequisite Type</label>
+                            <div class="prerequisite-type">
+                                <label>
+                                    <input type="radio" name="prereqType" value="prerequisite" checked>
+                                    Prerequisite
+                                </label>
+                                <label>
+                                    <input type="radio" name="prereqType" value="corequisite">
+                                    Co-requisite
+                                </label>
+                                <label>
+                                    <input type="radio" name="prereqType" value="strict-corequisite">
+                                    Strict Co-requisite
+                                </label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Connection</button>
+                    </form>
+                </section>
+
+                <section class="section">
+                    <div class="btn-group">
+                        <button class="btn btn-success" onclick="saveProject()">Save Project</button>
+                        <button class="btn btn-secondary" onclick="exportData()">Export Data</button>
+                        <button class="btn btn-danger" onclick="clearAll()">Clear All</button>
+                    </div>
+                </section>
+            </aside>
+
+            <div class="canvas-container">
+                <div class="controls-panel">
+                    <div class="zoom-controls">
+                        <button class="zoom-btn" onclick="zoomIn()">+</button>
+                        <button class="zoom-btn" onclick="zoomOut()">-</button>
+                        <button class="zoom-btn" onclick="resetZoom()">⟲</button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="autoLayout()">Auto Layout</button>
+                </div>
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // ===== CONFIGURATION =====
+        // Replace these with your actual JSONbin.io credentials
+        const JSONBIN_API_KEY = '$2b$10$YOUR_API_KEY_HERE';
+        const JSONBIN_BASE_URL = 'https://api.jsonbin.io/v3';
+        
+        // ===== APPLICATION STATE =====
+        let projectData = {
+            id: '',
+            name: '',
+            courses: [],
+            prerequisites: [],
+            lastModified: new Date().toISOString()
+        };
+
+        let canvas, ctx;
+        let selectedNode = null;
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let panOffset = { x: 0, y: 0 };
+        let zoom = 1;
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', function() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            setupCanvas();
+            loadRecentProjects();
+            setupCanvasEvents();
+            
+            // Check if there's a project ID in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('project');
+            if (projectId) {
+                document.getElementById('projectId').value = projectId;
+                loadProject();
+            }
+        });
+
+        function setupCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+            
+            window.addEventListener('resize', () => {
+                canvas.width = container.offsetWidth;
+                canvas.height = container.offsetHeight;
+                render();
+            });
+        }
+
+        function setupCanvasEvents() {
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('wheel', handleWheel);
+            canvas.addEventListener('dblclick', handleDoubleClick);
+        }
+
+        // ===== JSONbin.io INTEGRATION =====
+        async function saveToJSONBin(data) {
+            showLoading();
+            try {
+                const binId = data.id || await createNewBin();
+                
+                const response = await fetch(`${JSONBIN_BASE_URL}/b/${binId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_API_KEY
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save project');
+                }
+
+                const result = await response.json();
+                data.id = binId;
+                return binId;
+            } catch (error) {
+                showError('Failed to save project: ' + error.message);
+                throw error;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function loadFromJSONBin(binId) {
+            showLoading();
+            try {
+                const response = await fetch(`${JSONBIN_BASE_URL}/b/${binId}/latest`, {
+                    headers: {
+                        'X-Master-Key': JSONBIN_API_KEY
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Project not found');
+                }
+
+                const result = await response.json();
+                return result.record;
+            } catch (error) {
+                showError('Failed to load project: ' + error.message);
+                throw error;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function createNewBin() {
+            const response = await fetch(`${JSONBIN_BASE_URL}/b`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_API_KEY
+                },
+                body: JSON.stringify(projectData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create new project');
+            }
+
+            const result = await response.json();
+            return result.metadata.id;
+        }
+
+        // ===== PROJECT MANAGEMENT =====
+        async function saveProject() {
+            try {
+                projectData.lastModified = new Date().toISOString();
+                const binId = await saveToJSONBin(projectData);
+                projectData.id = binId;
+                
+                // Update URL
+                const url = new URL(window.location);
+                url.searchParams.set('project', binId);
+                window.history.pushState({}, '', url);
+                
+                // Save to recent projects
+                saveToRecentProjects(binId, projectData.name || 'Untitled Project');
+                
+                showSuccess(`Project saved! ID: ${binId}`);
+                document.getElementById('projectId').value = binId;
+            } catch (error) {
+                console.error('Save error:', error);
+            }
+        }
+
+        async function loadProject() {
+            const projectId = document.getElementById('projectId').value.trim();
+            if (!projectId) {
+                showError('Please enter a project ID');
+                return;
+            }
+
+            try {
+                const data = await loadFromJSONBin(projectId);
+                projectData = data;
+                
+                // Update URL
+                const url = new URL(window.location);
+                url.searchParams.set('project', projectId);
+                window.history.pushState({}, '', url);
+                
+                // Save to recent projects
+                saveToRecentProjects(projectId, projectData.name || 'Untitled Project');
+                
+                updateUI();
+                autoLayout();
+                showSuccess('Project loaded successfully!');
+            } catch (error) {
+                console.error('Load error:', error);
+            }
+        }
+
+        function createNewProject() {
+            if (projectData.courses.length > 0) {
+                if (!confirm('Create a new project? Current work will be lost if not saved.')) {
+                    return;
+                }
+            }
+            
+            projectData = {
+                id: '',
+                name: prompt('Project name:', 'New Curriculum Map') || 'Untitled Project',
+                courses: [],
+                prerequisites: [],
+                lastModified: new Date().toISOString()
+            };
+            
+            document.getElementById('projectId').value = '';
+            updateUI();
+            
+            // Clear URL parameter
+            const url = new URL(window.location);
+            url.searchParams.delete('project');
+            window.history.pushState({}, '', url);
+            
+            showSuccess('New project created!');
+        }
+
+        // ===== LOCAL STORAGE FOR RECENT PROJECTS =====
+        function saveToRecentProjects(id, name) {
+            let recent = JSON.parse(localStorage.getItem('recentProjects') || '[]');
+            recent = recent.filter(p => p.id !== id);
+            recent.unshift({ id, name, date: new Date().toISOString() });
+            recent = recent.slice(0, 5); // Keep only 5 most recent
+            localStorage.setItem('recentProjects', JSON.stringify(recent));
+            loadRecentProjects();
+        }
+
+        function loadRecentProjects() {
+            const recent = JSON.parse(localStorage.getItem('recentProjects') || '[]');
+            const container = document.getElementById('recentProjects');
+            
+            if (recent.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">No recent projects</p>';
+                return;
+            }
+            
+            container.innerHTML = '<p style="font-weight: 500; margin-bottom: 8px;">Recent Projects:</p>';
+            recent.forEach(project => {
+                const item = document.createElement('div');
+                item.className = 'project-item';
+                item.innerHTML = `
+                    <div style="font-weight: 500;">${project.name}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">ID: ${project.id}</div>
+                `;
+                item.onclick = () => {
+                    document.getElementById('projectId').value = project.id;
+                    loadProject();
+                };
+                container.appendChild(item);
+            });
+        }
+
+        // ===== COURSE MANAGEMENT =====
+        function addCourse(event) {
+            event.preventDefault();
+            
+            const code = document.getElementById('courseCode').value.trim();
+            const name = document.getElementById('courseName').value.trim();
+            const credits = parseFloat(document.getElementById('courseCredits').value);
+            const semester = parseInt(document.getElementById('courseSemester').value);
+            
+            if (!code || !name) {
+                showError('Please fill in all required fields');
+                return;
+            }
+            
+            // Check for duplicate
+            if (projectData.courses.some(c => c.code === code)) {
+                showError('Course with this code already exists');
+                return;
+            }
+            
+            const course = {
+                id: Date.now().toString(),
+                code,
+                name,
+                credits,
+                semester,
+                x: 100 + (semester - 1) * 200,
+                y: 100 + (projectData.courses.filter(c => c.semester === semester).length * 100)
+            };
+            
+            projectData.courses.push(course);
+            updateUI();
+            document.getElementById('courseForm').reset();
+            showSuccess(`Course ${code} added successfully!`);
+        }
+
+        function deleteCourse(courseId) {
+            if (!confirm('Delete this course and all its connections?')) {
+                return;
+            }
+            
+            projectData.courses = projectData.courses.filter(c => c.id !== courseId);
+            projectData.prerequisites = projectData.prerequisites.filter(
+                p => p.from !== courseId && p.to !== courseId
+            );
+            
+            updateUI();
+        }
+
+        function addPrerequisite(event) {
+            event.preventDefault();
+            
+            const fromId = document.getElementById('fromCourse').value;
+            const toId = document.getElementById('toCourse').value;
+            const type = document.querySelector('input[name="prereqType"]:checked').value;
+            
+            if (!fromId || !toId) {
+                showError('Please select both courses');
+                return;
+            }
+            
+            if (fromId === toId) {
+                showError('A course cannot be a prerequisite to itself');
+                return;
+            }
+            
+            // Check for duplicate
+            if (projectData.prerequisites.some(p => p.from === fromId && p.to === toId)) {
+                showError('This connection already exists');
+                return;
+            }
+            
+            // Check for cycles (simple check)
+            if (projectData.prerequisites.some(p => p.from === toId && p.to === fromId)) {
+                showError('This would create a circular dependency');
+                return;
+            }
+            
+            projectData.prerequisites.push({
+                id: Date.now().toString(),
+                from: fromId,
+                to: toId,
+                type: type
+            });
+            
+            updateUI();
+            document.getElementById('prerequisiteForm').reset();
+            showSuccess('Prerequisite added successfully!');
+        }
+
+        // ===== UI UPDATES =====
+        function updateUI() {
+            updateCourseList();
+            updateCourseSelects();
+            render();
+        }
+
+        function updateCourseList() {
+            const container = document.getElementById('courseList');
+            container.innerHTML = '';
+            
+            if (projectData.courses.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No courses added yet</p>';
+                return;
+            }
+            
+            projectData.courses.forEach(course => {
+                const item = document.createElement('div');
+                item.className = 'course-item';
+                item.innerHTML = `
+                    <div class="course-info">
+                        <div class="course-code">${course.code}</div>
+                        <div class="course-name">${course.name} • ${course.credits} credits • Sem ${course.semester}</div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteCourse('${course.id}')">Delete</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function updateCourseSelects() {
+            const fromSelect = document.getElementById('fromCourse');
+            const toSelect = document.getElementById('toCourse');
+            
+            const options = '<option value="">Select course</option>' + 
+                projectData.courses.map(c => `<option value="${c.id}">${c.code} - ${c.name}</option>`).join('');
+            
+            fromSelect.innerHTML = options;
+            toSelect.innerHTML = options;
+        }
+
+        // ===== CANVAS RENDERING =====
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.save();
+            ctx.translate(panOffset.x, panOffset.y);
+            ctx.scale(zoom, zoom);
+            
+            // Draw grid
+            drawGrid();
+            
+            // Draw connections
+            projectData.prerequisites.forEach(prereq => {
+                const fromCourse = projectData.courses.find(c => c.id === prereq.from);
+                const toCourse = projectData.courses.find(c => c.id === prereq.to);
+                
+                if (fromCourse && toCourse) {
+                    drawConnection(fromCourse, toCourse, prereq.type);
+                }
+            });
+            
+            // Draw nodes
+            projectData.courses.forEach(course => {
+                drawNode(course);
+            });
+            
+            ctx.restore();
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            
+            const step = 50;
+            const startX = -panOffset.x / zoom;
+            const endX = (canvas.width - panOffset.x) / zoom;
+            const startY = -panOffset.y / zoom;
+            const endY = (canvas.height - panOffset.y) / zoom;
+            
+            for (let x = Math.floor(startX / step) * step; x < endX; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x, startY);
+                ctx.lineTo(x, endY);
+                ctx.stroke();
+            }
+            
+            for (let y = Math.floor(startY / step) * step; y < endY; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(startX, y);
+                ctx.lineTo(endX, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawNode(course) {
+            const width = 160;
+            const height = 80;
+            const x = course.x - width / 2;
+            const y = course.y - height / 2;
+            
+            // Shadow
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 4;
+            
+            // Background
+            ctx.fillStyle = course === selectedNode ? '#e0e7ff' : '#ffffff';
+            ctx.fillRect(x, y, width, height);
+            
+            // Border
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = course === selectedNode ? '#4f46e5' : '#e5e7eb';
+            ctx.lineWidth = course === selectedNode ? 2 : 1;
+            ctx.strokeRect(x, y, width, height);
+            
+            // Text
+            ctx.fillStyle = '#111827';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(course.code, course.x, course.y - 15);
+            
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#6b7280';
+            const lines = wrapText(course.name, width - 20);
+            lines.forEach((line, i) => {
+                ctx.fillText(line, course.x, course.y + i * 15);
+            });
+            
+            // Credits badge
+            ctx.fillStyle = '#2563eb';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText(`${course.credits} cr`, course.x, course.y + 30);
+        }
+
+        function drawConnection(from, to, type) {
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            
+            // Different line styles for different prerequisite types
+            switch(type) {
+                case 'prerequisite':
+                    ctx.strokeStyle = '#2563eb';
+                    ctx.setLineDash([]);
+                    break;
+                case 'corequisite':
+                    ctx.strokeStyle = '#7c3aed';
+                    ctx.setLineDash([5, 5]);
+                    break;
+                case 'strict-corequisite':
+                    ctx.strokeStyle = '#dc2626';
+                    ctx.setLineDash([2, 2]);
+                    break;
+            }
+            
+            ctx.lineWidth = 2;
+            
+            // Curved line
+            const cp1x = from.x + (to.x - from.x) / 3;
+            const cp1y = from.y;
+            const cp2x = from.x + 2 * (to.x - from.x) / 3;
+            const cp2y = to.y;
+            
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, to.x, to.y);
+            ctx.stroke();
+            
+            // Arrow
+            const angle = Math.atan2(to.y - cp2y, to.x - cp2x);
+            ctx.save();
+            ctx.translate(to.x, to.y);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.moveTo(-10, -5);
+            ctx.lineTo(0, 0);
+            ctx.lineTo(-10, 5);
+            ctx.stroke();
+            ctx.restore();
+            
+            ctx.setLineDash([]);
+        }
+
+        function wrapText(text, maxWidth) {
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = '';
+            
+            ctx.font = '12px sans-serif';
+            
+            words.forEach(word => {
+                const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                const metrics = ctx.measureText(testLine);
+                
+                if (metrics.width > maxWidth && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = testLine;
+                }
+            });
+            
+            if (currentLine) {
+                lines.push(currentLine);
+            }
+            
+            return lines.slice(0, 2); // Max 2 lines
+        }
+
+        // ===== CANVAS INTERACTION =====
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panOffset.x) / zoom;
+            const y = (e.clientY - rect.top - panOffset.y) / zoom;
+            
+            selectedNode = null;
+            projectData.courses.forEach(course => {
+                if (Math.abs(x - course.x) < 80 && Math.abs(y - course.y) < 40) {
+                    selectedNode = course;
+                }
+            });
+            
+            if (selectedNode) {
+                isDragging = true;
+                dragStart = { x: e.clientX - selectedNode.x * zoom, y: e.clientY - selectedNode.y * zoom };
+            } else {
+                canvas.style.cursor = 'grabbing';
+                isDragging = true;
+                dragStart = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
+            }
+            
+            render();
+        }
+
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            
+            if (selectedNode) {
+                selectedNode.x = (e.clientX - dragStart.x) / zoom;
+                selectedNode.y = (e.clientY - dragStart.y) / zoom;
+            } else {
+                panOffset.x = e.clientX - dragStart.x;
+                panOffset.y = e.clientY - dragStart.y;
+            }
+            
+            render();
+        }
+
+        function handleMouseUp() {
+            isDragging = false;
+            canvas.style.cursor = 'grab';
+        }
+
+        function handleWheel(e) {
+            e.preventDefault();
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const scale = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = Math.max(0.1, Math.min(3, zoom * scale));
+            
+            // Zoom towards mouse position
+            panOffset.x = x - (x - panOffset.x) * newZoom / zoom;
+            panOffset.y = y - (y - panOffset.y) * newZoom / zoom;
+            
+            zoom = newZoom;
+            render();
+        }
+
+        function handleDoubleClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panOffset.x) / zoom;
+            const y = (e.clientY - rect.top - panOffset.y) / zoom;
+            
+            projectData.courses.forEach(course => {
+                if (Math.abs(x - course.x) < 80 && Math.abs(y - course.y) < 40) {
+                    const newName = prompt('Edit course name:', course.name);
+                    if (newName && newName.trim()) {
+                        course.name = newName.trim();
+                        updateUI();
+                    }
+                }
+            });
+        }
+
+        // ===== ZOOM CONTROLS =====
+        function zoomIn() {
+            zoom = Math.min(3, zoom * 1.2);
+            render();
+        }
+
+        function zoomOut() {
+            zoom = Math.max(0.1, zoom / 1.2);
+            render();
+        }
+
+        function resetZoom() {
+            zoom = 1;
+            panOffset = { x: 0, y: 0 };
+            render();
+        }
+
+        // ===== AUTO LAYOUT =====
+        function autoLayout() {
+            if (projectData.courses.length === 0) return;
+            
+            // Group courses by semester
+            const semesters = {};
+            projectData.courses.forEach(course => {
+                if (!semesters[course.semester]) {
+                    semesters[course.semester] = [];
+                }
+                semesters[course.semester].push(course);
+            });
+            
+            // Position courses
+            const xSpacing = 200;
+            const ySpacing = 120;
+            const startX = 150;
+            const startY = 100;
+            
+            Object.keys(semesters).sort().forEach((sem, semIndex) => {
+                semesters[sem].forEach((course, courseIndex) => {
+                    course.x = startX + semIndex * xSpacing;
+                    course.y = startY + courseIndex * ySpacing;
+                });
+            });
+            
+            // Center view
+            const bounds = {
+                minX: Math.min(...projectData.courses.map(c => c.x)) - 100,
+                maxX: Math.max(...projectData.courses.map(c => c.x)) + 100,
+                minY: Math.min(...projectData.courses.map(c => c.y)) - 100,
+                maxY: Math.max(...projectData.courses.map(c => c.y)) + 100
+            };
+            
+            const centerX = (bounds.minX + bounds.maxX) / 2;
+            const centerY = (bounds.minY + bounds.maxY) / 2;
+            
+            zoom = Math.min(
+                canvas.width / (bounds.maxX - bounds.minX),
+                canvas.height / (bounds.maxY - bounds.minY),
+                1
+            ) * 0.8;
+            
+            panOffset.x = canvas.width / 2 - centerX * zoom;
+            panOffset.y = canvas.height / 2 - centerY * zoom;
+            
+            render();
+        }
+
+        // ===== UTILITY FUNCTIONS =====
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function showSuccess(message) {
+            const el = document.getElementById('successMessage');
+            el.textContent = message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(projectData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `curriculum-map-${projectData.id || 'export'}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showSuccess('Data exported successfully!');
+        }
+
+        function clearAll() {
+            if (!confirm('Clear all courses and connections? This cannot be undone.')) {
+                return;
+            }
+            
+            projectData.courses = [];
+            projectData.prerequisites = [];
+            updateUI();
+            showSuccess('All data cleared');
+        }
+    </script>
+</body>
+</html>
